@@ -81,7 +81,7 @@ class Proyectil{
 
 //Creacion de la clase enemigo
 class Enemy {
-    constructor(){  //Inicia la delcaracion del constructor del jugador
+    constructor({posicion}){  //Inicia la delcaracion del constructor del jugador
         //Se le asigna una velocidad
         this.velocidad = {
             x:0,
@@ -96,8 +96,8 @@ class Enemy {
             this.ancho = 100 * scale;
             this.alto = 100 * scale;
             this.posicion = {
-                x: canvas.width / 2 - this.ancho / 2, 
-                y: canvas.height / 2
+                x: posicion.x, 
+                y: posicion.y
             }
         }   
     }
@@ -112,11 +112,47 @@ class Enemy {
                 this.alto
             )        //Se le agrega la imagen   
     }
-    actualizar(){
+    actualizar({velocidad}){
         if(this.image){
             this.dibujar()
-            this.posicion.x += this.velocidad.x
-            this.posicion.y += this.velocidad.y
+            this.posicion.x += velocidad.x
+            this.posicion.y += velocidad.y
+        }
+    }
+}
+
+class Gridenemigos{
+    constructor(){
+        this.posicion = {
+            x: 0,
+            y: 0
+        }
+        this.velocidad = {
+            x:3,
+            y:0
+        }
+        this.enemigos = []
+
+        this.width = 820;
+        for(let x = 0; x < 12; x++){
+            for(let y = 0; y < 5; y++){
+            this.enemigos.push(new Enemy({
+                posicion:{
+                    x: x * 70,
+                    y: y * 60
+                }}))
+        }
+        console.log(this.enemigos);
+    }}
+    actualizar(){
+        this.posicion.x += this.velocidad.x
+        this.posicion.y += this.velocidad.y
+
+        this.velocidad.y = 0
+
+        if(this.posicion.x + this.width >= canvas.width || this.posicion.x <= 0){
+            this.velocidad.x = -this.velocidad.x
+            this.velocidad.y = 10
         }
     }
 }
@@ -124,7 +160,7 @@ class Enemy {
 
 const p1 = new Player();  // Creacion del nuevo jugador 
 const proyectiles = [ ] // Creacion de los proyectiles
-const enem = new Enemy(); // Creacion del enemigo
+const gridenemigos = [new Gridenemigos()]
 
 const keys = {
     a: {
@@ -144,12 +180,39 @@ function animate(){
     c.fillStyle = 'black'    // fondo negro
     c.fillRect(0, 0, canvas.width, canvas.height);  
     p1.actualizar()
-    enem.actualizar()
+    //enem.actualizar()
 
-     proyectiles.forEach(proyectil => {
-     proyectil.actualizar()
+     proyectiles.forEach((proyectil, index) => {
+        if(proyectil.posicion.y + proyectil.radio <= 0){
+            setTimeout(() => {
+                proyectiles.splice(index, 1)
+            },0 )
+        } else{
+            proyectil.actualizar()
+        }
      })
 
+     gridenemigos.forEach(grid => {
+         grid.actualizar()
+         grid.enemigos.forEach((enemigo, i) => {
+             enemigo.actualizar({velocidad: grid.velocidad})
+
+             proyectiles.forEach((proyectil, j) => {
+                 if(
+                    proyectil.posicion.y - proyectil.radio <= 
+                    enemigo.posicion.y + enemigo.alto && 
+                    proyectil.posicion.x + proyectil.radio >= 
+                    enemigo.posicion.x && proyectil.posicion.x - 
+                    proyectil.radio <= enemigo.posicion.x
+                    ){
+                     setTimeout(() =>{
+                         grid.enemigos.splice(i, 1)
+                         proyectiles.splice(j, 1)
+                     },0 )
+                 }
+             })
+         })
+     })
 
     if(keys.a.pressed && p1.posicion.x >= 0){
         p1.velocidad.x = -7
@@ -174,12 +237,12 @@ addEventListener('keydown', ({key}) => {
         case 'a':
             p1.velocidad.x += -5
             keys.a.pressed = true
-            console.log("El halcon se movio a la izquierda");
+            //console.log("El halcon se movio a la izquierda");
             break;
         case 'd':
             p1.velocidad.x += 5
             keys.d.pressed = true
-            console.log("El halcon se movio a la derecha");
+            //console.log("El halcon se movio a la derecha");
             break;
         case ' ':
             proyectiles.push( 
@@ -194,11 +257,9 @@ addEventListener('keydown', ({key}) => {
                }
             }
         ))
-            console.log("El halcon disparó");
-            keys.space.pressed = true
+            //console.log("El halcon disparó");
+           
             break;  
-        default:
-            break;
     }  
 })
 
@@ -207,18 +268,16 @@ addEventListener('keyup', ({key}) => {
         case 'a':
             p1.velocidad.x += 5
             keys.a.pressed = false
-            console.log("El halcon se movio a la izquierda");
+            //console.log("El halcon se movio a la izquierda");
             break;
         case 'd':
             p1.velocidad.x += -5
             keys.d.pressed = false
-            console.log("El halcon se movio a la derecha");
+            //console.log("El halcon se movio a la derecha");
             break;
         case ' ':
-            console.log("El halcon disparó");
-            keys.space.pressed = false
+            //console.log("El halcon disparó");
+            //keys.space.pressed = false
             break;  
-        default:
-            break;
     }  
 })
